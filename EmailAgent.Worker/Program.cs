@@ -8,6 +8,9 @@ builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddScoped<IEmailReaderService, EmailReaderService>();
+builder.Services.AddScoped<IEmailLabelService, EmailLabelService>();
+builder.Services.AddScoped<IEmailMover, EmailMover>();
+builder.Services.AddSingleton<IntentScorer>();
 
 builder.Services.AddHostedService<Worker>();
 
