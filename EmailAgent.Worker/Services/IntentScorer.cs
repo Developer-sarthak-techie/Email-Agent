@@ -31,7 +31,7 @@ public class IntentScorer
             },
             new IntentRule
             {
-                Label = "Finance",
+                Label = "Invoices",
                 Keywords = new() { "invoice", "payment", "transaction" },
                 Weight = 20
             }
@@ -66,4 +66,4 @@ public class IntentScorer
         return (best.Key, best.Value);
 
     }
-}
+} 

@@ -6,11 +6,13 @@ public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+  
 
     public Worker(ILogger<Worker> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
+       
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -21,6 +23,9 @@ public class Worker : BackgroundService
             var reader = scope.ServiceProvider.GetRequiredService<IEmailReaderService>();
             var mover = scope.ServiceProvider.GetRequiredService<IEmailMover>();
             var scorer = scope.ServiceProvider.GetRequiredService<IntentScorer>();
+            var draftService = scope.ServiceProvider.GetRequiredService<IEmailDraftService>();
+            var fintechDraftGenerator = scope.ServiceProvider.GetRequiredService<FintechDraftGenerator>();
+            var detectIntent = scope.ServiceProvider.GetRequiredService<FintechIntentEngine>();
             
             var emails = await reader.FetchUnreadEmailsAsync();
 
@@ -59,6 +64,20 @@ public class Worker : BackgroundService
                 var (label, score) = scorer.Calculate(subject ?? "", body ?? "");
 
                 _logger.LogInformation("Detected Label: {Label} | Score: {Score}", label, score);
+                var intentResponse= detectIntent.Detect(subject ?? "", body ?? "");
+                
+                // for creating drafts
+                
+                if (score >= 70)
+                {
+                    var senderName = email.Message.From.Mailboxes.FirstOrDefault()?.Name ?? "Customer";
+
+                    var draft = fintechDraftGenerator.Generate(intentResponse.Intent, senderName);
+
+                    await draftService.CreateDraftReplyAsync(email.Message, draft);
+
+                    _logger.LogInformation("Draft created successfully.");
+                }
 
                 if (score >= 70)
                 {

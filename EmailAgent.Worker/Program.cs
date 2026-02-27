@@ -10,6 +10,10 @@ builder.Services.Configure<EmailSettings>(
 builder.Services.AddScoped<IEmailReaderService, EmailReaderService>();
 builder.Services.AddScoped<IEmailLabelService, EmailLabelService>();
 builder.Services.AddScoped<IEmailMover, EmailMover>();
+builder.Services.AddScoped<IEmailDraftService, EmailDraftService>();
+
+builder.Services.AddSingleton<FintechIntentEngine>();
+builder.Services.AddSingleton<FintechDraftGenerator>();
 builder.Services.AddSingleton<IntentScorer>();
 
 builder.Services.AddHostedService<Worker>();
