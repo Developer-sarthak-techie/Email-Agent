@@ -60,36 +60,69 @@ public class Worker : BackgroundService
                     continue; // Skip scoring
                 }
 
-                // 🔥 FALLBACK TO SCORING ENGINE
-                var (label, score) = scorer.Calculate(subject ?? "", body ?? "");
+                
+                var result = scorer.Calculate(subject ?? "", body ?? "");
 
-                _logger.LogInformation("Detected Label: {Label} | Score: {Score}", label, score);
-                var intentResponse= detectIntent.Detect(subject ?? "", body ?? "");
-                
-                // for creating drafts
-                
-                if (score >= 70)
+                _logger.LogInformation(
+                    "Intent: {Intent} | Score: {Score} | Confidence: {Confidence}%",
+                    result.Intent, result.Score, result.Confidence);
+
+                if (result.Score >= 50)
                 {
                     var senderName = email.Message.From.Mailboxes.FirstOrDefault()?.Name ?? "Customer";
 
-                    var draft = fintechDraftGenerator.Generate(intentResponse.Intent, senderName);
+                    var draft = fintechDraftGenerator.Generate(result.Intent, senderName);
 
                     await draftService.CreateDraftReplyAsync(email.Message, draft);
 
-                    _logger.LogInformation("Draft created successfully.");
-                }
+                    await mover.MoveToLabelAsync(email.Uid, result.Intent.ToString());
 
-                if (score >= 70)
-                {
-                    await mover.MoveToLabelAsync(email.Uid, label);
-                    _logger.LogInformation("Moving email to label: {Label}", label);
-
-                    // We'll implement actual move next
+                    _logger.LogInformation("Draft created and moved to label: {Label}", result.Intent);
                 }
-                else
-                {
-                    _logger.LogInformation("Score below threshold. Keeping in Inbox.");
-                }
+                
+                
+                
+                
+                
+                
+                
+                
+                // // 🔥 FALLBACK TO SCORING ENGINE
+                // var (label, score) = scorer.Calculate(subject ?? "", body ?? "");
+                //
+                // _logger.LogInformation("Detected Label: {Label} | Score: {Score}", label, score);
+                // var intentResponse= detectIntent.Detect(subject ?? "", body ?? "");
+                //
+                // // for creating drafts
+                //
+                // if (score >= 70)
+                // {
+                //     var senderName = email.Message.From.Mailboxes.FirstOrDefault()?.Name ?? "Customer";
+                //
+                //     var draft = fintechDraftGenerator.Generate(intentResponse.Intent, senderName);
+                //
+                //     await draftService.CreateDraftReplyAsync(email.Message, draft);
+                //
+                //     _logger.LogInformation("Draft created successfully.");
+                // }
+                //
+                // if (score >= 70)
+                // {
+                //     await mover.MoveToLabelAsync(email.Uid, label);
+                //     _logger.LogInformation("Moving email to label: {Label}", label);
+                //
+                //     // We'll implement actual move next
+                // }
+                // else
+                // {
+                //     _logger.LogInformation("Score below threshold. Keeping in Inbox.");
+                // }
+                //
+                //
+                
+                
+                
+                
                 _logger.LogInformation("======================================");
                 _logger.LogInformation("Message ID: {MessageId}", email.Message.MessageId);
                 _logger.LogInformation("From: {From}", email.Message.From);
