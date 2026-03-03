@@ -24,10 +24,12 @@ public interface IEmailLabelResolverService
 public class EmailLabelResolverService : IEmailLabelResolverService
 {
     private readonly EmailSettings _settings;
+    private readonly IImapConnectionThrottle _throttle;
 
-    public EmailLabelResolverService(IOptions<EmailSettings> settings)
+    public EmailLabelResolverService(IOptions<EmailSettings> settings, IImapConnectionThrottle throttle)
     {
         _settings = settings.Value;
+        _throttle = throttle;
     }
 
     public string GetLabelNameForIntent(FintechEmailIntent.FintechEmailIntentEnum intent)
@@ -40,6 +42,14 @@ public class EmailLabelResolverService : IEmailLabelResolverService
         if (string.IsNullOrWhiteSpace(labelName))
             return;
 
+        using (await _throttle.AcquireAsync(cancellationToken))
+        {
+            await EnsureLabelExistsCoreAsync(labelName, cancellationToken);
+        }
+    }
+
+    private async Task EnsureLabelExistsCoreAsync(string labelName, CancellationToken cancellationToken)
+    {
         using var client = new ImapClient();
         await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);
         await client.AuthenticateAsync(_settings.Email, _settings.Password, cancellationToken);

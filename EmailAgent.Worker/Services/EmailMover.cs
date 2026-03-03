@@ -13,13 +13,23 @@ public interface IEmailMover
 public class EmailMover : IEmailMover
 {
     private readonly EmailSettings _settings;
+    private readonly IImapConnectionThrottle _throttle;
 
-    public EmailMover(IOptions<EmailSettings> settings)
+    public EmailMover(IOptions<EmailSettings> settings, IImapConnectionThrottle throttle)
     {
         _settings = settings.Value;
+        _throttle = throttle;
     }
 
     public async Task MoveToLabelAsync(UniqueId uid, string label, CancellationToken cancellationToken = default)
+    {
+        using (await _throttle.AcquireAsync(cancellationToken))
+        {
+            await MoveToLabelCoreAsync(uid, label, cancellationToken);
+        }
+    }
+
+    private async Task MoveToLabelCoreAsync(UniqueId uid, string label, CancellationToken cancellationToken)
     {
         using var client = new ImapClient();
         await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);

@@ -24,4 +24,7 @@ public class ProcessingEngineOptions
 
     /// <summary>IMAP connect/read timeout in seconds. Default 30.</summary>
     public int ImapTimeoutSeconds { get; set; } = 30;
+
+    /// <summary>Max simultaneous IMAP connections (draft/label/move). Outlook/Gmail typically allow ~10–15; keep at or below to avoid "Too many simultaneous connections". Default 5.</summary>
+    public int MaxConcurrentImapConnections { get; set; } = 5;
 }

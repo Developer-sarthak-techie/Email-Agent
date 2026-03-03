@@ -11,16 +11,26 @@ public interface IEmailDraftService
     Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null, CancellationToken cancellationToken = default);
 }
 
-public class EmailDraftService:IEmailDraftService
+public class EmailDraftService : IEmailDraftService
 {
     private readonly EmailSettings _settings;
+    private readonly IImapConnectionThrottle _throttle;
 
-    public EmailDraftService(IOptions<EmailSettings> settings)
+    public EmailDraftService(IOptions<EmailSettings> settings, IImapConnectionThrottle throttle)
     {
         _settings = settings.Value;
+        _throttle = throttle;
     }
 
     public async Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null, CancellationToken cancellationToken = default)
+    {
+        using (await _throttle.AcquireAsync(cancellationToken))
+        {
+            await CreateDraftReplyCoreAsync(originalMessage, draftBody, ccAddresses, cancellationToken);
+        }
+    }
+
+    private async Task CreateDraftReplyCoreAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses, CancellationToken cancellationToken)
     {
         using var client = new ImapClient();
         await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);
