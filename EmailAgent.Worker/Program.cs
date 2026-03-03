@@ -6,6 +6,8 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<ProcessingEngineOptions>(
+    builder.Configuration.GetSection(ProcessingEngineOptions.SectionName));
 
 builder.Services.AddScoped<IEmailReaderService, EmailReaderService>();
 builder.Services.AddScoped<IEmailLabelService, EmailLabelService>();

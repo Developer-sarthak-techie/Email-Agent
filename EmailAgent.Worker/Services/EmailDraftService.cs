@@ -8,7 +8,7 @@ namespace EmailAgent.Worker.Services;
 
 public interface IEmailDraftService
 {
-    Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null);
+    Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null, CancellationToken cancellationToken = default);
 }
 
 public class EmailDraftService:IEmailDraftService
@@ -20,12 +20,11 @@ public class EmailDraftService:IEmailDraftService
         _settings = settings.Value;
     }
 
-    public async Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null)
+    public async Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null, CancellationToken cancellationToken = default)
     {
         using var client = new ImapClient();
-
-        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true);
-        await client.AuthenticateAsync(_settings.Email, _settings.Password);
+        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);
+        await client.AuthenticateAsync(_settings.Email, _settings.Password, cancellationToken);
 
         // 🔹 Create reply
         var reply = new MimeMessage();
@@ -53,12 +52,9 @@ public class EmailDraftService:IEmailDraftService
             Text = draftBody
         };
 
-        // 🔹 Append to Gmail Drafts folder
-        var drafts = await client.GetFolderAsync("[Gmail]/Drafts");
-        await drafts.OpenAsync(FolderAccess.ReadWrite);
-
-        await drafts.AppendAsync(reply, MessageFlags.Draft);
-
-        await client.DisconnectAsync(true);
+        var drafts = await client.GetFolderAsync("[Gmail]/Drafts", cancellationToken);
+        await drafts.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+        await drafts.AppendAsync(reply, MessageFlags.Draft, cancellationToken);
+        await client.DisconnectAsync(true, cancellationToken);
     }
 }

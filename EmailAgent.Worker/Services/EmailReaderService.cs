@@ -1,87 +1,87 @@
-using MimeKit;
+using EmailAgent.Worker.Models;
+using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
-using MailKit;
-using MimeKit;
 using Microsoft.Extensions.Options;
-using EmailAgent.Worker.Models;
-
+using MimeKit;
 
 namespace EmailAgent.Worker.Services;
 
 public interface IEmailReaderService
 {
-    Task<List<FetchedEmail>> FetchUnreadEmailsAsync();
+    /// <summary>
+    /// Fetches unread emails from inbox, optionally limited to maxCount for batch processing.
+    /// </summary>
+    /// <param name="maxCount">Max number of emails to fetch (null = no limit). Use for high-volume to avoid memory issues.</param>
+    /// <param name="cancellationToken">Cancellation and timeout.</param>
+    Task<List<FetchedEmail>> FetchUnreadEmailsAsync(int? maxCount = null, CancellationToken cancellationToken = default);
 }
-public class EmailReaderService:IEmailReaderService
+
+public class EmailReaderService : IEmailReaderService
 {
     private readonly EmailSettings _settings;
-    private readonly ILogger<Worker> _logger;
-    public EmailReaderService(IOptions<EmailSettings> settings , ILogger<Worker> logger)
+    private readonly ILogger<EmailReaderService> _logger;
+    private readonly TimeSpan _connectTimeout;
+
+    public EmailReaderService(
+        IOptions<EmailSettings> settings,
+        IOptions<ProcessingEngineOptions> engineOptions,
+        ILogger<EmailReaderService> logger)
     {
         _settings = settings.Value;
         _logger = logger;
+        var timeoutSec = engineOptions?.Value?.ImapTimeoutSeconds ?? 30;
+        _connectTimeout = TimeSpan.FromSeconds(Math.Max(5, Math.Min(timeoutSec, 120)));
     }
-    
-    public async Task<List<FetchedEmail>> FetchUnreadEmailsAsync()
+
+    public async Task<List<FetchedEmail>> FetchUnreadEmailsAsync(int? maxCount = null, CancellationToken cancellationToken = default)
     {
         using var client = new ImapClient();
-
-        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true);
-        await client.AuthenticateAsync(_settings.Email, _settings.Password);
-
-        var inbox = client.Inbox;
-        await inbox.OpenAsync(FolderAccess.ReadWrite);
-
-        var uids = await inbox.SearchAsync(SearchQuery.NotSeen);
-
-        var messages = new List<FetchedEmail>();
-
-        foreach (var uid in uids)
+        using (var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
         {
-            var message = await inbox.GetMessageAsync(uid);
-
-            messages.Add(new FetchedEmail
-            {
-                Uid = uid,
-                Message = message
-            });
+            connectCts.CancelAfter(_connectTimeout);
+            await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, connectCts.Token);
+            await client.AuthenticateAsync(_settings.Email, _settings.Password, connectCts.Token);
         }
 
-        await client.DisconnectAsync(true);
+        var inbox = client.Inbox;
+        await inbox.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
 
+        var uids = await inbox.SearchAsync(SearchQuery.NotSeen, cancellationToken);
+        var total = uids.Count;
+
+        if (total == 0)
+        {
+            await client.DisconnectAsync(true, cancellationToken);
+            return new List<FetchedEmail>();
+        }
+
+        var toFetch = maxCount.HasValue && total > maxCount.Value
+            ? uids.Take(maxCount.Value).ToList()
+            : uids;
+
+        var messages = new List<FetchedEmail>(toFetch.Count);
+
+        foreach (var uid in toFetch)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                var message = await inbox.GetMessageAsync(uid, cancellationToken);
+                messages.Add(new FetchedEmail { Uid = uid, Message = message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch message UID {Uid}, skipping", uid);
+            }
+        }
+
+        if (maxCount.HasValue && total > maxCount.Value)
+            _logger.LogInformation("Fetched {Count} of {Total} unread emails (batch limit)", messages.Count, total);
+        else
+            _logger.LogInformation("Fetched {Count} unread emails", messages.Count);
+
+        await client.DisconnectAsync(true, cancellationToken);
         return messages;
     }
-    
-    
-    // public async Task<List<MimeMessage>> FetchUnreadEmailsAsync()
-    // {
-    //     using var client = new ImapClient();
-    //
-    //     await client.ConnectAsync(_settings.ImapServer, _settings.Port, true);
-    //     await client.AuthenticateAsync(_settings.Email, _settings.Password);
-    //
-    //     var inbox = client.Inbox;
-    //     await inbox.OpenAsync(FolderAccess.ReadWrite);
-    //
-    //     var uids = await inbox.SearchAsync(SearchQuery.NotSeen);
-    //
-    //     var messages = new List<MimeMessage>();
-    //
-    //     _logger.LogInformation("Unread emails count: {Count}", uids.Count);
-    //     foreach (var uid in uids)
-    //     {
-    //         var message = await inbox.GetMessageAsync(uid);
-    //         messages.Add(message);
-    //         var sender = message.From;
-    //         _logger.LogInformation("Read email: {Email}", sender);
-    //         // Mark as seen
-    //       //  await inbox.AddFlagsAsync(uid, MessageFlags.Seen, true);
-    //     }
-    //
-    //     await client.DisconnectAsync(true);
-    //
-    //     return messages;
-    // }
-    //
 }
