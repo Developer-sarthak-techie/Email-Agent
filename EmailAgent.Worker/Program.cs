@@ -12,6 +12,7 @@ builder.Services.AddScoped<IEmailLabelService, EmailLabelService>();
 builder.Services.AddScoped<IEmailLabelResolverService, EmailLabelResolverService>();
 builder.Services.AddScoped<IEmailMover, EmailMover>();
 builder.Services.AddScoped<IEmailDraftService, EmailDraftService>();
+builder.Services.AddScoped<IEmailProcessingValidatorService, EmailProcessingValidatorService>();
 
 builder.Services.AddSingleton<FintechIntentEngine>();
 builder.Services.AddSingleton<FintechDraftGenerator>();

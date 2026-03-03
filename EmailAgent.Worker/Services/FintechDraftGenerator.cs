@@ -18,6 +18,20 @@ public class FintechDraftGenerator
         return string.Format(template, name);
     }
 
+    /// <summary>
+    /// Draft for emails tagged with high-priority mentions (@himanshu, @sebi, @radhika).
+    /// </summary>
+    public string GenerateHighPriorityTaggedDraft(string customerName)
+    {
+        var name = string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName.Trim();
+        var templates = new[]
+        {
+            "Dear {0},\n\nWe have received your request and flagged it as high priority. Our team will look into this and respond at the earliest.\n\nRegards,\nSupport Team",
+            "Dear {0},\n\nThank you for reaching out. This has been marked high priority and we will get back to you shortly.\n\nRegards,\nSupport Team"
+        };
+        return string.Format(templates[_random.Next(templates.Length)], name);
+    }
+
     private static IReadOnlyList<string> GetTemplates(FintechEmailIntent.FintechEmailIntentEnum intent)
     {
         return intent switch

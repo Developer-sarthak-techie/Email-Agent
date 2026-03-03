@@ -8,7 +8,7 @@ namespace EmailAgent.Worker.Services;
 
 public interface IEmailDraftService
 {
-    Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody);
+    Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null);
 }
 
 public class EmailDraftService:IEmailDraftService
@@ -20,7 +20,7 @@ public class EmailDraftService:IEmailDraftService
         _settings = settings.Value;
     }
 
-    public async Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody)
+    public async Task CreateDraftReplyAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses = null)
     {
         using var client = new ImapClient();
 
@@ -35,9 +35,14 @@ public class EmailDraftService:IEmailDraftService
             ? originalMessage.ReplyTo
             : originalMessage.From);
 
-        reply.Subject = originalMessage.Subject.StartsWith("Re:")
-            ? originalMessage.Subject
-            : "Re: " + originalMessage.Subject;
+        if (ccAddresses?.Count > 0)
+        {
+            foreach (var cc in ccAddresses)
+                reply.Cc.Add(MailboxAddress.Parse(cc));
+        }
+
+        var subj = originalMessage.Subject ?? "";
+        reply.Subject = subj.StartsWith("Re:", StringComparison.OrdinalIgnoreCase) ? subj : "Re: " + subj;
 
         // Maintain thread
         reply.InReplyTo = originalMessage.MessageId;
