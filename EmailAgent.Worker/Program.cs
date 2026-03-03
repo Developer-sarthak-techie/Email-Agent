@@ -9,6 +9,7 @@ builder.Services.Configure<EmailSettings>(
 
 builder.Services.AddScoped<IEmailReaderService, EmailReaderService>();
 builder.Services.AddScoped<IEmailLabelService, EmailLabelService>();
+builder.Services.AddScoped<IEmailLabelResolverService, EmailLabelResolverService>();
 builder.Services.AddScoped<IEmailMover, EmailMover>();
 builder.Services.AddScoped<IEmailDraftService, EmailDraftService>();
 

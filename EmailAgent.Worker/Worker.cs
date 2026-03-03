@@ -22,18 +22,17 @@ public class Worker : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var reader = scope.ServiceProvider.GetRequiredService<IEmailReaderService>();
             var mover = scope.ServiceProvider.GetRequiredService<IEmailMover>();
+            var labelResolver = scope.ServiceProvider.GetRequiredService<IEmailLabelResolverService>();
             var scorer = scope.ServiceProvider.GetRequiredService<IntentScorer>();
             var draftService = scope.ServiceProvider.GetRequiredService<IEmailDraftService>();
             var fintechDraftGenerator = scope.ServiceProvider.GetRequiredService<FintechDraftGenerator>();
             var detectIntent = scope.ServiceProvider.GetRequiredService<FintechIntentEngine>();
-            
+
             var emails = await reader.FetchUnreadEmailsAsync();
 
-            // using var scope = _scopeFactory.CreateScope();
             var labelService = scope.ServiceProvider.GetRequiredService<IEmailLabelService>();
 
             var labels = await labelService.GetAllLabelsAsync();
-
             foreach (var label in labels)
             {
                 _logger.LogInformation("Found Label: {Label}", label);
@@ -48,19 +47,19 @@ public class Worker : BackgroundService
                 // 🔥 PRIORITY RULE 1 - JIRA DOMAIN
                 if (email.Message.From.ToString().Contains("@taiservices.atlassian.net", StringComparison.OrdinalIgnoreCase))
                 {
+                    await labelResolver.EnsureLabelExistsAsync("Jira", stoppingToken);
                     await mover.MoveToLabelAsync(email.Uid, "Jira");
                     _logger.LogInformation("Moved to Jira (sender rule matched)");
                     continue; // Skip scoring
-                } 
+                }
                 // 🔥 PRIORITY RULE 2 - Aws DOMAIN
                 if (email.Message.From.ToString().Contains("no-reply@sns.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 {
+                    await labelResolver.EnsureLabelExistsAsync("AWS", stoppingToken);
                     await mover.MoveToLabelAsync(email.Uid, "AWS");
                     _logger.LogInformation("Moved to AWS (sender rule matched)");
                     continue; // Skip scoring
                 }
-
-                
                 var result = scorer.Calculate(subject ?? "", body ?? "");
 
                 _logger.LogInformation(
@@ -75,17 +74,12 @@ public class Worker : BackgroundService
 
                     await draftService.CreateDraftReplyAsync(email.Message, draft);
 
-                    await mover.MoveToLabelAsync(email.Uid, result.Intent.ToString());
+                    var labelName = labelResolver.GetLabelNameForIntent(result.Intent);
+                    await labelResolver.EnsureLabelExistsAsync(labelName, stoppingToken);
+                    await mover.MoveToLabelAsync(email.Uid, labelName);
 
-                    _logger.LogInformation("Draft created and moved to label: {Label}", result.Intent);
+                    _logger.LogInformation("Draft created and moved to label: {Label}", labelName);
                 }
-                
-                
-                
-                
-                
-                
-                
                 
                 // // 🔥 FALLBACK TO SCORING ENGINE
                 // var (label, score) = scorer.Calculate(subject ?? "", body ?? "");
@@ -120,9 +114,6 @@ public class Worker : BackgroundService
                 //
                 //
                 
-                
-                
-                
                 _logger.LogInformation("======================================");
                 _logger.LogInformation("Message ID: {MessageId}", email.Message.MessageId);
                 _logger.LogInformation("From: {From}", email.Message.From);
@@ -134,7 +125,6 @@ public class Worker : BackgroundService
                         : email.Message.TextBody);
                 _logger.LogInformation("======================================");
             }
-
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
