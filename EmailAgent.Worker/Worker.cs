@@ -22,6 +22,8 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _logger.LogInformation("Email Agent Worker started. Polling inbox every 1 minute.");
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var runStart = DateTime.UtcNow;
@@ -29,6 +31,7 @@ public class Worker : BackgroundService
 
             try
             {
+                _logger.LogDebug("Run starting: creating scope and fetching unread emails.");
                 using var scope = _scopeFactory.CreateScope();
                 var reader = scope.ServiceProvider.GetRequiredService<IEmailReaderService>();
                 var validator = scope.ServiceProvider.GetRequiredService<IEmailProcessingValidatorService>();

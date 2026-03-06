@@ -9,6 +9,8 @@ builder.Services.Configure<EmailSettings>(
 builder.Services.Configure<ProcessingEngineOptions>(
     builder.Configuration.GetSection(ProcessingEngineOptions.SectionName));
 
+builder.Services.AddSingleton<IImapConnectionThrottle, ImapConnectionThrottle>();
+
 builder.Services.AddScoped<IEmailReaderService, EmailReaderService>();
 builder.Services.AddScoped<IEmailLabelService, EmailLabelService>();
 builder.Services.AddScoped<IEmailLabelResolverService, EmailLabelResolverService>();
