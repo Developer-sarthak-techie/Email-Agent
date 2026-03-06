@@ -62,9 +62,19 @@ public class EmailDraftService : IEmailDraftService
             Text = draftBody
         };
 
-        var drafts = await client.GetFolderAsync("[Gmail]/Drafts", cancellationToken);
+        var draftsFolderName = GetDraftsFolderName();
+        var drafts = await client.GetFolderAsync(draftsFolderName, cancellationToken);
         await drafts.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
         await drafts.AppendAsync(reply, MessageFlags.Draft, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);
+    }
+
+    private string GetDraftsFolderName()
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.DraftsFolder))
+            return _settings.DraftsFolder!.Trim();
+        if (_settings.ImapServer?.Contains("gmail", StringComparison.OrdinalIgnoreCase) == true)
+            return "[Gmail]/Drafts";
+        return "Drafts";
     }
 }

@@ -184,6 +184,9 @@ public class EmailProcessingValidatorService : IEmailProcessingValidatorService
             };
         }
 
+        _logger.LogInformation(
+            "No action for this email: score {Score} (threshold {Threshold}). Kept in Inbox. Intent: {Intent}",
+            score, ScoreThreshold, intent);
         return new EmailProcessingResult
         {
             Success = true,

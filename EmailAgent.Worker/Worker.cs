@@ -25,7 +25,7 @@ public class Worker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var runStart = DateTime.UtcNow;
-            int processed = 0, succeeded = 0, failed = 0;
+            int processed = 0, succeeded = 0, failed = 0, actionsTaken = 0;
 
             try
             {
@@ -37,9 +37,12 @@ public class Worker : BackgroundService
 
                 if (emails.Count == 0)
                 {
+                    _logger.LogInformation("No unread emails in inbox — skipping run. Next check in 1 minute.");
                     await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                     continue;
                 }
+
+                _logger.LogInformation("Processing {Count} unread email(s).", emails.Count);
 
                 // Optional: log label count only when batch is small (avoid noise for 10k+ runs)
                 if (emails.Count <= 100)
@@ -68,7 +71,11 @@ public class Worker : BackgroundService
                         {
                             var result = await validator.ProcessAndValidateAsync(email, cts.Token);
                             if (result.Success)
+                            {
                                 Interlocked.Increment(ref succeeded);
+                                if (result.Label != null)
+                                    Interlocked.Increment(ref actionsTaken);
+                            }
                             else
                                 Interlocked.Increment(ref failed);
                         }
@@ -90,8 +97,8 @@ public class Worker : BackgroundService
 
                 var elapsed = DateTime.UtcNow - runStart;
                 _logger.LogInformation(
-                    "Batch complete | Processed: {Processed} | Success: {Succeeded} | Failed: {Failed} | Elapsed: {Elapsed:F1}s | Parallelism: {Parallelism}",
-                    processed, succeeded, failed, elapsed.TotalSeconds, parallelism);
+                    "Batch complete | Processed: {Processed} | Success: {Succeeded} | Failed: {Failed} | Actions (draft+move): {Actions} | Elapsed: {Elapsed:F1}s | Parallelism: {Parallelism}",
+                    processed, succeeded, failed, actionsTaken, elapsed.TotalSeconds, parallelism);
             }
             catch (OperationCanceledException)
             {
