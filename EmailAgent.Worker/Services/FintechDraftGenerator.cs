@@ -45,6 +45,10 @@ public class FintechDraftGenerator
             FintechEmailIntent.FintechEmailIntentEnum.ChargebackDispute => ChargebackDisputeTemplates,
             FintechEmailIntent.FintechEmailIntentEnum.SettlementQuery => SettlementQueryTemplates,
             FintechEmailIntent.FintechEmailIntentEnum.AccountAccessIssue => AccountAccessIssueTemplates,
+            FintechEmailIntent.FintechEmailIntentEnum.StatementRequest => StatementRequestTemplates,
+            FintechEmailIntent.FintechEmailIntentEnum.UnregisteredOrIncompleteInfo => UnregisteredOrIncompleteInfoTemplates,
+            FintechEmailIntent.FintechEmailIntentEnum.RedemptionQuery => RedemptionQueryTemplates,
+            FintechEmailIntent.FintechEmailIntentEnum.NavSipFundQuery => NavSipFundQueryTemplates,
             _ => GeneralInquiryTemplates
         };
     }
@@ -113,6 +117,35 @@ public class FintechDraftGenerator
         "Dear {0},\n\nWe have received your request regarding account access. Our team will assist with login/OTP/password reset as applicable. If the issue persists, we will escalate to technical support and get back to you shortly.\n\nRegards,\nSupport Team",
         "Dear {0},\n\nThank you for reaching out. Your account access issue has been logged. We will help with login, OTP, or password reset as needed and escalate to technical support if required.\n\nRegards,\nSupport Team",
         "Dear {0},\n\nWe have noted your account access concern. Our team will assist with login, OTP, or password reset. If the problem continues, we will escalate to our technical team and revert shortly.\n\nRegards,\nSupport Team"
+    };
+
+    // BRD-aligned (Zoho Desk / AMC) templates
+    private static readonly IReadOnlyList<string> StatementRequestTemplates = new[]
+    {
+        "Dear {0},\n\nWe have received your request for the Statement of Account / Capital Gain Statement. Your request has been logged and our team will process it. The statement will be sent to your registered email address after verification. If you have shared your folio number or PAN, we will use the same for generation.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nThank you for your email. Your SOA / Capital Gain Statement request has been noted. We will verify your details and send the requested statement to your registered email. Please allow us a short time to process.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nWe have received your request for the statement. Our team will generate and send the same to you after verifying your folio/PAN details. You will receive the document on your registered email id.\n\nRegards,\nInvestor Services"
+    };
+
+    private static readonly IReadOnlyList<string> UnregisteredOrIncompleteInfoTemplates = new[]
+    {
+        "Dear {0},\n\nThank you for writing to us. To serve you better and ensure security, we request you to share your registered email ID, PAN and/or folio number so we can verify your identity and process your request. Alternatively, please send this email from your registered email address with us.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nWe have received your email. For verification and to process your request, we need your PAN and folio number (or please write to us from your registered email id). Once we have the details, we will assist you at the earliest.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nTo proceed with your request we need to verify your identity. Kindly provide your PAN and folio number, or send the email from your registered email address. We will then process your request without delay.\n\nRegards,\nInvestor Services"
+    };
+
+    private static readonly IReadOnlyList<string> RedemptionQueryTemplates = new[]
+    {
+        "Dear {0},\n\nWe have received your query regarding redemption. Our team is looking into the status and will update you shortly. Redemption requests are processed as per the scheme provisions and you will receive the proceeds in your registered bank account.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nThank you for your email. Your redemption-related query has been noted. We will check the status and revert with the details. If there is any delay, we will keep you informed.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nWe have noted your redemption request/query. Our team will process or clarify the status and get back to you at the earliest.\n\nRegards,\nInvestor Services"
+    };
+
+    private static readonly IReadOnlyList<string> NavSipFundQueryTemplates = new[]
+    {
+        "Dear {0},\n\nWe have received your query regarding NAV / SIP / fund details. The latest NAV and scheme information is available on our website. Our team will share the specific details you need or direct you to the relevant factsheet/FAQ.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nThank you for your email. Your query on NAV, SIP or fund information has been noted. We will provide the requested details or point you to the correct resource shortly.\n\nRegards,\nInvestor Services",
+        "Dear {0},\n\nWe have received your request for NAV, SIP or fund-related information. Our team will respond with the details or the link to the latest factsheet and FAQs.\n\nRegards,\nInvestor Services"
     };
 
     private static readonly IReadOnlyList<string> GeneralInquiryTemplates = new[]

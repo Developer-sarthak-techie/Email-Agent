@@ -272,17 +272,18 @@ public class IntentScorer
                 {
                     "kyc verification", "kyc update", "identity verification",
                     "document verification", "kyc pending", "kyc rejected",
-                    "document submission", "compliance verification"
+                    "document submission", "compliance verification",
+                    "update nominee", "nominee update", "change nominee"
                 },
                 PhraseKeywords = new List<string>
                 {
                     "address proof", "pan card", "aadhaar", "passport copy",
-                    "upload documents", "kyc approved", "identity proof"
+                    "upload documents", "kyc approved", "identity proof", "nominee details"
                 },
                 Keywords = new List<string>
                 {
                     "kyc", "verification", "identity", "address proof", "pan",
-                    "aadhaar", "passport", "documents", "compliance", "upload"
+                    "aadhaar", "passport", "documents", "compliance", "upload", "nominee", "investor"
                 },
                 PhraseWeight = 38,
                 KeywordWeight = 14
@@ -294,16 +295,18 @@ public class IntentScorer
                 {
                     "regulatory report", "audit requirement", "compliance document",
                     "aml", "rbi circular", "sox compliance", "regulatory filing",
-                    "compliance review", "internal audit", "risk assessment"
+                    "compliance review", "internal audit", "risk assessment",
+                    "forwarded to compliance", "escalate to compliance", "compliance team"
                 },
                 PhraseKeywords = new List<string>
                 {
-                    "legal notice", "regulatory", "audit", "aml", "rbi", "sox"
+                    "legal notice", "regulatory", "audit", "aml", "rbi", "sox",
+                    "escalation", "escalate"
                 },
                 Keywords = new List<string>
                 {
                     "compliance", "audit", "regulatory", "aml", "rbi", "sox",
-                    "filing", "legal", "assessment"
+                    "filing", "legal", "assessment", "escalation", "escalate"
                 },
                 PhraseWeight = 40,
                 KeywordWeight = 18
@@ -366,6 +369,96 @@ public class IntentScorer
                     "authentication", "mfa", "locked", "credentials"
                 },
                 PhraseWeight = 36,
+                KeywordWeight = 14
+            },
+            // ---------- BRD-aligned intents (Zoho Desk / AMC) ----------
+            new()
+            {
+                Intent = FintechEmailIntent.FintechEmailIntentEnum.StatementRequest,
+                StrongPhrases = new List<string>
+                {
+                    "send me my statement", "capital gain statement", "statement of account",
+                    "send soa", "please send soa", "capital gains statement", "soa request",
+                    "send me my capital gain", "statement for fy", "financial year statement",
+                    "folio statement", "statement of account request"
+                },
+                PhraseKeywords = new List<string>
+                {
+                    "soa to me", "capital gain for", "statement request", "need my statement",
+                    "request soa", "request capital gain", "send statement", "account statement"
+                },
+                Keywords = new List<string>
+                {
+                    "soa", "statement", "capital gain", "capital gains", "folio", "fy",
+                    "financial year", "account statement", "gain statement"
+                },
+                PhraseWeight = 44,
+                KeywordWeight = 16
+            },
+            new()
+            {
+                Intent = FintechEmailIntent.FintechEmailIntentEnum.UnregisteredOrIncompleteInfo,
+                StrongPhrases = new List<string>
+                {
+                    "unregistered email", "not registered", "registered email id",
+                    "send from registered email", "pan and folio", "folio details for verification",
+                    "incomplete information", "missing identifiers", "please provide pan",
+                    "please provide folio", "verification required", "customer database"
+                },
+                PhraseKeywords = new List<string>
+                {
+                    "requesting pan", "requesting folio", "provide folio", "provide pan",
+                    "additional information required", "identification details", "kyc details"
+                },
+                Keywords = new List<string>
+                {
+                    "unregistered", "registered", "pan", "folio number", "folio no",
+                    "verification", "identify", "customer id", "investor id"
+                },
+                PhraseWeight = 42,
+                KeywordWeight = 14
+            },
+            new()
+            {
+                Intent = FintechEmailIntent.FintechEmailIntentEnum.RedemptionQuery,
+                StrongPhrases = new List<string>
+                {
+                    "redemption request", "redemption delay", "redeem my units",
+                    "redemption process", "when will redemption", "redemption status",
+                    "partial redemption", "full redemption", "redemption not processed"
+                },
+                PhraseKeywords = new List<string>
+                {
+                    "want to redeem", "redeem amount", "redemption of", "delay in redemption",
+                    "redemption pending", "units redemption"
+                },
+                Keywords = new List<string>
+                {
+                    "redemption", "redeem", "redeemed", "units", "redemption delay"
+                },
+                PhraseWeight = 40,
+                KeywordWeight = 16
+            },
+            new()
+            {
+                Intent = FintechEmailIntent.FintechEmailIntentEnum.NavSipFundQuery,
+                StrongPhrases = new List<string>
+                {
+                    "nav value", "current nav", "nav of fund", "sip details",
+                    "sip status", "fund performance", "dividend declaration",
+                    "dividend payout", "fund factsheet", "scheme details"
+                },
+                PhraseKeywords = new List<string>
+                {
+                    "what is nav", "nav today", "sip amount", "systematic investment",
+                    "dividend option", "growth option", "fund information"
+                },
+                Keywords = new List<string>
+                {
+                    "nav", "sip", "dividend", "fund", "scheme", "units", "aum",
+                    "factsheet", "performance"
+                },
+                PhraseWeight = 38,
                 KeywordWeight = 14
             }
         };

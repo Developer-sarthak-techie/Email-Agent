@@ -37,6 +37,14 @@ public class EmailProcessingValidatorService : IEmailProcessingValidatorService
 
     private static readonly string[] HighPriorityMentions = { "@himanshu", "@sebi", "@radhika" };
 
+    /// <summary>Keywords that indicate a statement / SOA / info request as per BRD.</summary>
+    private static readonly string[] ExternalStatementOrInfoKeywords =
+    {
+        "soa", "statement of account", "capital gain statement", "capital gains statement",
+        "capital gain", "capital gains", "statement", "nav", "sip", "fund details",
+        "dividend", "statement request"
+    };
+
     public EmailProcessingValidatorService(
         IEmailMover mover,
         IEmailLabelResolverService labelResolver,
@@ -112,6 +120,35 @@ public class EmailProcessingValidatorService : IEmailProcessingValidatorService
         var subject = email.Message.Subject ?? "";
         var body = email.Message.TextBody ?? "";
         var subjectAndBody = subject + " " + body;
+
+        // Extra layer: external (non-binmile.com) users requesting statements / SOA / info
+        var senderAddress = email.Message.From?.Mailboxes.FirstOrDefault()?.Address ?? "";
+        var isInternalSender = senderAddress.EndsWith("@binmile.com", StringComparison.OrdinalIgnoreCase);
+        var loweredContent = subjectAndBody.ToLowerInvariant();
+
+        if (!isInternalSender && ExternalStatementOrInfoKeywords.Any(k => loweredContent.Contains(k)))
+        {
+            var senderName = email.Message.From?.Mailboxes.FirstOrDefault()?.Name ?? "Customer";
+            var draftBody =
+                $"Dear {senderName},\n\nKindly write to us from your registered email address and provide your PAN and folio number so that we can share the statement or information you are requesting.\n\nRegards,\nInvestor Services";
+
+            await _draftService.CreateDraftReplyAsync(email.Message, draftBody, null, cancellationToken);
+
+            var labelName = _labelResolver.GetLabelNameForIntent(FintechEmailIntent.FintechEmailIntentEnum.UnregisteredOrIncompleteInfo);
+            await EnsureLabelAndMoveAsync(email.Uid, labelName, cancellationToken);
+
+            _logger.LogInformation(
+                "External statement/info request detected from {Address}. Draft created asking for registered email + PAN/folio, moved to label: {Label}",
+                senderAddress, labelName);
+
+            return new EmailProcessingResult
+            {
+                Success = true,
+                Label = labelName,
+                Message = "External statement/info request: asked user to write from registered email with PAN + folio.",
+                Intent = FintechEmailIntent.FintechEmailIntentEnum.UnregisteredOrIncompleteInfo
+            };
+        }
 
         // Priority rule 1: @himanshu, @sebi, @radhika in subject or body → HIGH PRIORITY + draft with CC
         if (HighPriorityMentions.Any(m => subjectAndBody.Contains(m, StringComparison.OrdinalIgnoreCase)))
