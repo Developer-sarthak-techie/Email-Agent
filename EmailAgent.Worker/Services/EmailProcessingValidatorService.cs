@@ -35,7 +35,7 @@ public class EmailProcessingValidatorService : IEmailProcessingValidatorService
     /// <summary>CC address for high-priority tagged drafts (e.g. @himanshu, @sebi, @radhika).</summary>
     private const string HighPriorityDraftCc = "s@binmile.com";
 
-    private static readonly string[] HighPriorityMentions = { "@himanshu", "@sebi", "@radhika" };
+    private static readonly string[] HighPriorityMentions = { "@himanshu", "@sebi", "@radhika"  ,"radhika","sebi"};
 
     /// <summary>Keywords that indicate a statement / SOA / info request as per BRD.</summary>
     private static readonly string[] ExternalStatementOrInfoKeywords =

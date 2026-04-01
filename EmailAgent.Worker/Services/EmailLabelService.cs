@@ -22,7 +22,7 @@ public class EmailLabelService:IEmailLabelService
     {
         using var client = new ImapClient();
 
-        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true);
+        await client.ConnectAsync(_settings.ImapServer, _settings.Port, _settings.UseSsl);
         await client.AuthenticateAsync(_settings.Email, _settings.Password);
 
         var folders = await client.GetFoldersAsync(client.PersonalNamespaces[0]);

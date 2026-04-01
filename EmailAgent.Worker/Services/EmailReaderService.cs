@@ -40,7 +40,7 @@ public class EmailReaderService : IEmailReaderService
         using (var connectCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
         {
             connectCts.CancelAfter(_connectTimeout);
-            await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, connectCts.Token);
+            await client.ConnectAsync(_settings.ImapServer, _settings.Port, _settings.UseSsl, connectCts.Token);
             await client.AuthenticateAsync(_settings.Email, _settings.Password, connectCts.Token);
         }
 

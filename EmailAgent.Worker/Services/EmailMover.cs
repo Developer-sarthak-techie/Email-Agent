@@ -32,7 +32,7 @@ public class EmailMover : IEmailMover
     private async Task MoveToLabelCoreAsync(UniqueId uid, string label, CancellationToken cancellationToken)
     {
         using var client = new ImapClient();
-        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);
+        await client.ConnectAsync(_settings.ImapServer, _settings.Port, _settings.UseSsl, cancellationToken);
         await client.AuthenticateAsync(_settings.Email, _settings.Password, cancellationToken);
 
         var inbox = client.Inbox;

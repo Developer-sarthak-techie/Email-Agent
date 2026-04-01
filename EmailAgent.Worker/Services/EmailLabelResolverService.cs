@@ -51,7 +51,7 @@ public class EmailLabelResolverService : IEmailLabelResolverService
     private async Task EnsureLabelExistsCoreAsync(string labelName, CancellationToken cancellationToken)
     {
         using var client = new ImapClient();
-        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);
+        await client.ConnectAsync(_settings.ImapServer, _settings.Port, _settings.UseSsl, cancellationToken);
         await client.AuthenticateAsync(_settings.Email, _settings.Password, cancellationToken);
 
         try

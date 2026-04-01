@@ -33,7 +33,7 @@ public class EmailDraftService : IEmailDraftService
     private async Task CreateDraftReplyCoreAsync(MimeMessage originalMessage, string draftBody, IReadOnlyList<string>? ccAddresses, CancellationToken cancellationToken)
     {
         using var client = new ImapClient();
-        await client.ConnectAsync(_settings.ImapServer, _settings.Port, true, cancellationToken);
+        await client.ConnectAsync(_settings.ImapServer, _settings.Port, _settings.UseSsl, cancellationToken);
         await client.AuthenticateAsync(_settings.Email, _settings.Password, cancellationToken);
 
         // 🔹 Create reply
@@ -73,6 +73,8 @@ public class EmailDraftService : IEmailDraftService
     {
         if (!string.IsNullOrWhiteSpace(_settings.DraftsFolder))
             return _settings.DraftsFolder!.Trim();
+        if (_settings.Provider?.Equals("Zoho", StringComparison.OrdinalIgnoreCase) == true)
+            return "Drafts";
         if (_settings.ImapServer?.Contains("gmail", StringComparison.OrdinalIgnoreCase) == true)
             return "[Gmail]/Drafts";
         return "Drafts";
